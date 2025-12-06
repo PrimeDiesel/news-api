@@ -100,9 +100,9 @@ app.get('/sports', async (req, res) => {
   try {
     const response = await axios.get('https://newsapi.org/v2/top-headlines?category=sports&country=gb&pageSize=8&apiKey=59278959b90f45bbbfee3a42287dbf7b');
     
+    // Less strict filtering for sports - only exclude extreme content
     const excludedWords = [
-      'murder', 'sexual assault', 'rape', 'drugs', 'drug trafficking', 'sex trafficking', 
-      'cannabis', 'marijuana', 'illegal drugs', 'narcotics'
+      'murder', 'sexual assault', 'rape', 'sex trafficking'
     ];
     
     const articles = response.data.articles
