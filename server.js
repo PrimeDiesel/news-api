@@ -124,21 +124,19 @@ app.get('/sports', async (req, res) => {
 // Education news route - Scotland/SQA focused (NEW!)
 app.get('/education', async (req, res) => {
   try {
-    // Go back 12 months (1 YEAR) to find education articles
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    const fromDate = oneYearAgo.toISOString().split('T')[0];
+    console.log('Education: Fetching articles...');
     
     const response = await axios.get('https://newsapi.org/v2/everything', {
       params: {
-        q: 'education Scotland',
+        q: 'Scotland education OR Scottish school OR SQA',
         language: 'en',
-        from: fromDate,
         sortBy: 'publishedAt',
         pageSize: 50,
         apiKey: '59278959b90f45bbbfee3a42287dbf7b'
       }
     });
+    
+    console.log('Education: Got', response.data.articles.length, 'articles from API');
     
     // Very light filtering - just remove obvious sports
     const articles = response.data.articles
@@ -148,7 +146,8 @@ app.get('/education', async (req, res) => {
         // Remove only obvious sports content
         return !combined.includes('premier league') && 
                !combined.includes('champions league') &&
-               !combined.includes('rugby match');
+               !combined.includes('rugby match') &&
+               !combined.includes('football match');
       })
       .map(article => ({
         title: article.title,
@@ -160,11 +159,17 @@ app.get('/education', async (req, res) => {
       }))
       .slice(0, 8);
     
-    console.log(`Education: Returning ${articles.length} articles from past 12 months`);
+    console.log(`Education: Returning ${articles.length} articles`);
     res.json(articles);
   } catch (error) {
-    console.error('Error fetching education news:', error);
-    res.status(500).send('Error fetching education news');
+    console.error('Education ERROR:', error.message);
+    if (error.response) {
+      console.error('API Response:', error.response.status, error.response.data);
+    }
+    res.status(500).json({ 
+      error: 'Error fetching education news',
+      details: error.message 
+    });
   }
 });
 
