@@ -135,16 +135,45 @@ app.get('/education', async (req, res) => {
   try {
     const response = await axios.get('https://newsapi.org/v2/everything', {
       params: {
-        q: '(Scotland OR Scottish OR SQA OR "Scottish Qualifications Authority") AND (education OR school OR university OR college OR students OR teachers OR exam OR curriculum OR Highers OR "National 5")',
+        q: '(Scotland OR Scottish OR SQA) AND (education OR school OR university OR pupils OR teachers OR exam OR "Higher" OR "National 5" OR curriculum OR college)',
         language: 'en',
         sortBy: 'publishedAt',
-        pageSize: 8,
+        pageSize: 20,
         apiKey: '59278959b90f45bbbfee3a42287dbf7b'
       }
     });
     
+    // Filter OUT sports and non-education content
+    const excludedWords = [
+      'football', 'rugby', 'cricket', 'tennis', 'f1', 'formula 1',
+      'premier league', 'champions league', 'world cup', 'olympics',
+      'match', 'goal', 'score', 'tournament', 'championship',
+      'movie', 'film', 'celebrity', 'entertainment', 'music album'
+    ];
+    
+    // Keywords that MUST appear for education content
+    const requiredWords = [
+      'education', 'school', 'university', 'college', 'pupils', 
+      'students', 'teachers', 'exam', 'curriculum', 'sqa', 
+      'higher', 'national 5', 'learning', 'teaching'
+    ];
+    
     const articles = response.data.articles
-      .filter(article => article.title && article.description)
+      .filter(article => {
+        if (!article.title || !article.description) return false;
+        
+        const lowerTitle = article.title.toLowerCase();
+        const lowerDesc = article.description.toLowerCase();
+        const combined = lowerTitle + ' ' + lowerDesc;
+        
+        // Must NOT contain sports/entertainment words
+        const hasBadWords = excludedWords.some(word => combined.includes(word));
+        if (hasBadWords) return false;
+        
+        // Must contain at least ONE education keyword
+        const hasEducationWord = requiredWords.some(word => combined.includes(word));
+        return hasEducationWord;
+      })
       .map(article => ({
         title: article.title,
         description: article.description,
