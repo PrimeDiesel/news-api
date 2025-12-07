@@ -124,52 +124,24 @@ app.get('/sports', async (req, res) => {
 // Education news route - Scotland/SQA focused (NEW!)
 app.get('/education', async (req, res) => {
   try {
-    // Go back 90 days (3 months) to find more education articles
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    const fromDate = ninetyDaysAgo.toISOString().split('T')[0];
-    
-    console.log('Education: Fetching from', fromDate);
+    // Go back 6 months to find education articles
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const fromDate = sixMonthsAgo.toISOString().split('T')[0];
     
     const response = await axios.get('https://newsapi.org/v2/everything', {
       params: {
-        q: 'Scotland education school',
+        q: 'Scotland education',
         language: 'en',
         from: fromDate,
         sortBy: 'publishedAt',
-        pageSize: 50,
+        pageSize: 20,
         apiKey: '59278959b90f45bbbfee3a42287dbf7b'
       }
     });
     
-    console.log('Education: Got', response.data.articles.length, 'articles');
-    
-    // Filter OUT sports and non-education content
-    const excludedWords = [
-      'football', 'rugby', 'cricket', 'premier league', 'champions league'
-    ];
-    
     const articles = response.data.articles
-      .filter(article => {
-        if (!article.title || !article.description) return false;
-        
-        const combined = (article.title + ' ' + article.description).toLowerCase();
-        
-        // Must NOT contain sports
-        const hasBadWords = excludedWords.some(word => combined.includes(word));
-        if (hasBadWords) return false;
-        
-        // Must contain education keywords
-        const hasEducation = combined.includes('education') || 
-                            combined.includes('school') || 
-                            combined.includes('university') ||
-                            combined.includes('pupils') ||
-                            combined.includes('students') ||
-                            combined.includes('teachers') ||
-                            combined.includes('sqa');
-        
-        return hasEducation;
-      })
+      .filter(article => article.title && article.description)
       .map(article => ({
         title: article.title,
         description: article.description,
@@ -180,16 +152,10 @@ app.get('/education', async (req, res) => {
       }))
       .slice(0, 8);
     
-    console.log('Education: Returning', articles.length, 'filtered articles');
     res.json(articles);
   } catch (error) {
-    console.error('Error fetching education news:', error.message);
-    console.error('Full error:', error.response ? error.response.data : error);
-    res.status(500).json({ 
-      error: 'Error fetching education news',
-      message: error.message,
-      details: error.response ? error.response.data : null
-    });
+    console.error('Error fetching education news:', error);
+    res.status(500).send('Error fetching education news');
   }
 });
 
