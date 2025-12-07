@@ -121,33 +121,50 @@ app.get('/sports', async (req, res) => {
   }
 });
 
-// Education news route - Scotland/SQA focused (NEW!)
+// Education news route - UK-wide education (NEW!)
 app.get('/education', async (req, res) => {
   try {
-    console.log('Education: Fetching articles...');
+    console.log('Education: Fetching UK education articles...');
     
     const response = await axios.get('https://newsapi.org/v2/everything', {
       params: {
-        q: 'Scotland education OR Scottish school OR SQA',
+        q: 'UK education school pupils students',
         language: 'en',
         sortBy: 'publishedAt',
-        pageSize: 50,
+        pageSize: 100,
         apiKey: '59278959b90f45bbbfee3a42287dbf7b'
       }
     });
     
     console.log('Education: Got', response.data.articles.length, 'articles from API');
     
-    // Very light filtering - just remove obvious sports
+    // STRICT filtering - MUST contain education keywords
+    const educationKeywords = [
+      'education', 'school', 'university', 'college', 'pupils', 'students', 
+      'teachers', 'sqa', 'exam', 'gcse', 'a-level', 'higher', 'national 5', 
+      'curriculum', 'learning', 'ofsted', 'academy', 'headteacher', 'classroom',
+      'educational', 'teaching', 'tuition', 'scholarship'
+    ];
+    
+    const sportKeywords = [
+      'world cup', 'premier league', 'champions league', 'football', 'rugby', 
+      'cricket', 'match', 'goal', 'uefa', 'fifa', 'tournament', 'championship',
+      'striker', 'midfielder', 'defender', 'goalkeeper', 'scored', 'defeat', 'victory'
+    ];
+    
     const articles = response.data.articles
       .filter(article => {
         if (!article.title || !article.description) return false;
+        
         const combined = (article.title + ' ' + article.description).toLowerCase();
-        // Remove only obvious sports content
-        return !combined.includes('premier league') && 
-               !combined.includes('champions league') &&
-               !combined.includes('rugby match') &&
-               !combined.includes('football match');
+        
+        // Must NOT contain any sports keywords
+        const hasSports = sportKeywords.some(word => combined.includes(word));
+        if (hasSports) return false;
+        
+        // MUST contain at least ONE education keyword
+        const hasEducation = educationKeywords.some(word => combined.includes(word));
+        return hasEducation;
       })
       .map(article => ({
         title: article.title,
@@ -159,7 +176,7 @@ app.get('/education', async (req, res) => {
       }))
       .slice(0, 8);
     
-    console.log(`Education: Returning ${articles.length} articles`);
+    console.log(`Education: Returning ${articles.length} UK education articles`);
     res.json(articles);
   } catch (error) {
     console.error('Education ERROR:', error.message);
