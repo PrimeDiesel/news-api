@@ -6,6 +6,31 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 
+// CACHE SYSTEM - Store articles in memory
+const cache = {
+  news: { data: null, timestamp: 0 },
+  tech: { data: null, timestamp: 0 },
+  sports: { data: null, timestamp: 0 },
+  education: { data: null, timestamp: 0 }
+};
+
+const CACHE_DURATION = 60 * 60 * 1000; // 60 minutes (1 hour) in milliseconds
+
+function isCacheValid(cacheKey) {
+  const cached = cache[cacheKey];
+  if (!cached.data) return false;
+  const age = Date.now() - cached.timestamp;
+  return age < CACHE_DURATION;
+}
+
+function setCache(cacheKey, data) {
+  cache[cacheKey] = {
+    data: data,
+    timestamp: Date.now()
+  };
+  console.log(`✅ Cached ${cacheKey} - ${data.length} articles`);
+}
+
 // Root route
 app.get('/', (req, res) => {
   res.send('Welcome to the News API!');
@@ -14,6 +39,13 @@ app.get('/', (req, res) => {
 // News route (existing)
 app.get('/news', async (req, res) => {
   try {
+    // Check cache first
+    if (isCacheValid('news')) {
+      console.log('📦 Returning cached news');
+      return res.json(cache.news.data);
+    }
+    
+    console.log('🔄 Fetching fresh news from API...');
     // Fetch world news articles - request 20 to ensure we get 8+ after filtering
     const response = await axios.get('https://newsapi.org/v2/top-headlines?sources=bbc-news&pageSize=20&apiKey=59278959b90f45bbbfee3a42287dbf7b');
     
@@ -43,6 +75,9 @@ app.get('/news', async (req, res) => {
       }))
       .slice(0, 8);
     
+    // Cache the results
+    setCache('news', articles);
+    
     // Return articles (should be 8)
     res.json(articles);
   } catch (error) {
@@ -58,6 +93,13 @@ app.get('/news', async (req, res) => {
 // Tech news route (NEW!)
 app.get('/tech', async (req, res) => {
   try {
+    // Check cache first
+    if (isCacheValid('tech')) {
+      console.log('📦 Returning cached tech');
+      return res.json(cache.tech.data);
+    }
+    
+    console.log('🔄 Fetching fresh tech from API...');
     const response = await axios.get('https://newsapi.org/v2/top-headlines?category=technology&country=us&pageSize=8&apiKey=59278959b90f45bbbfee3a42287dbf7b');
     
     const excludedWords = [
@@ -83,6 +125,9 @@ app.get('/tech', async (req, res) => {
       }))
       .slice(0, 8);
     
+    // Cache the results
+    setCache('tech', articles);
+    
     res.json(articles);
   } catch (error) {
     console.error('Error fetching tech news:', error.message);
@@ -97,6 +142,13 @@ app.get('/tech', async (req, res) => {
 // Sports news route (NEW!)
 app.get('/sports', async (req, res) => {
   try {
+    // Check cache first
+    if (isCacheValid('sports')) {
+      console.log('📦 Returning cached sports');
+      return res.json(cache.sports.data);
+    }
+    
+    console.log('🔄 Fetching fresh sports from API...');
     const response = await axios.get('https://newsapi.org/v2/top-headlines?category=sports&country=gb&pageSize=8&apiKey=59278959b90f45bbbfee3a42287dbf7b');
     
     // Less strict filtering for sports - only exclude extreme content
@@ -122,6 +174,9 @@ app.get('/sports', async (req, res) => {
       }))
       .slice(0, 8);
     
+    // Cache the results
+    setCache('sports', articles);
+    
     res.json(articles);
   } catch (error) {
     console.error('Error fetching sports news:', error.message);
@@ -136,6 +191,13 @@ app.get('/sports', async (req, res) => {
 // Education news route - UK-wide education (NEW!)
 app.get('/education', async (req, res) => {
   try {
+    // Check cache first
+    if (isCacheValid('education')) {
+      console.log('📦 Returning cached education');
+      return res.json(cache.education.data);
+    }
+    
+    console.log('🔄 Fetching fresh education from API...');
     console.log('Education: Fetching UK education articles...');
     
     const response = await axios.get('https://newsapi.org/v2/everything', {
@@ -187,6 +249,9 @@ app.get('/education', async (req, res) => {
         publishedAt: new Date(article.publishedAt).toLocaleString()
       }))
       .slice(0, 8);
+    
+    // Cache the results
+    setCache('education', articles);
     
     console.log(`Education: Returning ${articles.length} UK education articles`);
     res.json(articles);
