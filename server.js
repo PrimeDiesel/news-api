@@ -14,8 +14,8 @@ app.get('/', (req, res) => {
 // News route (existing)
 app.get('/news', async (req, res) => {
   try {
-    // Fetch world news articles - request 15 to ensure we get 8 after filtering
-    const response = await axios.get('https://newsapi.org/v2/top-headlines?sources=bbc-news&pageSize=15&apiKey=59278959b90f45bbbfee3a42287dbf7b');
+    // Fetch world news articles - request 20 to ensure we get 8+ after filtering
+    const response = await axios.get('https://newsapi.org/v2/top-headlines?sources=bbc-news&pageSize=20&apiKey=59278959b90f45bbbfee3a42287dbf7b');
     
     // Expanded excluded words array to include more drug-related terms
     const excludedWords = [
@@ -133,12 +133,18 @@ app.get('/sports', async (req, res) => {
 // Education news route - Scotland/SQA focused (NEW!)
 app.get('/education', async (req, res) => {
   try {
+    // Go back 30 days to find more education articles
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const fromDate = thirtyDaysAgo.toISOString().split('T')[0];
+    
     const response = await axios.get('https://newsapi.org/v2/everything', {
       params: {
         q: '(Scotland OR Scottish OR SQA) AND (education OR school OR university OR pupils OR teachers OR exam OR "Higher" OR "National 5" OR curriculum OR college)',
         language: 'en',
+        from: fromDate,
         sortBy: 'publishedAt',
-        pageSize: 20,
+        pageSize: 50,
         apiKey: '59278959b90f45bbbfee3a42287dbf7b'
       }
     });
@@ -147,15 +153,15 @@ app.get('/education', async (req, res) => {
     const excludedWords = [
       'football', 'rugby', 'cricket', 'tennis', 'f1', 'formula 1',
       'premier league', 'champions league', 'world cup', 'olympics',
-      'match', 'goal', 'score', 'tournament', 'championship',
-      'movie', 'film', 'celebrity', 'entertainment', 'music album'
+      'match', 'goal', 'score', 'tournament', 'championship', 'game', 'win', 'defeat',
+      'movie', 'film', 'celebrity', 'entertainment', 'music album', 'concert'
     ];
     
     // Keywords that MUST appear for education content
     const requiredWords = [
       'education', 'school', 'university', 'college', 'pupils', 
       'students', 'teachers', 'exam', 'curriculum', 'sqa', 
-      'higher', 'national 5', 'learning', 'teaching'
+      'higher', 'national 5', 'learning', 'teaching', 'qualification'
     ];
     
     const articles = response.data.articles
