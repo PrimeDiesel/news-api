@@ -14,8 +14,8 @@ app.get('/', (req, res) => {
 // News route (existing)
 app.get('/news', async (req, res) => {
   try {
-    // Fetch world news articles
-    const response = await axios.get('https://newsapi.org/v2/top-headlines?sources=bbc-news&apiKey=59278959b90f45bbbfee3a42287dbf7b');
+    // Fetch world news articles - request 15 to ensure we get 8 after filtering
+    const response = await axios.get('https://newsapi.org/v2/top-headlines?sources=bbc-news&pageSize=15&apiKey=59278959b90f45bbbfee3a42287dbf7b');
     
     // Expanded excluded words array to include more drug-related terms
     const excludedWords = [
@@ -127,6 +127,38 @@ app.get('/sports', async (req, res) => {
   } catch (error) {
     console.error('Error fetching sports news:', error);
     res.status(500).send('Error fetching sports news');
+  }
+});
+
+// Education news route - Scotland/SQA focused (NEW!)
+app.get('/education', async (req, res) => {
+  try {
+    const response = await axios.get('https://newsapi.org/v2/everything', {
+      params: {
+        q: '(Scotland OR Scottish OR SQA OR "Scottish Qualifications Authority") AND (education OR school OR university OR college OR students OR teachers OR exam OR curriculum OR Highers OR "National 5")',
+        language: 'en',
+        sortBy: 'publishedAt',
+        pageSize: 8,
+        apiKey: '59278959b90f45bbbfee3a42287dbf7b'
+      }
+    });
+    
+    const articles = response.data.articles
+      .filter(article => article.title && article.description)
+      .map(article => ({
+        title: article.title,
+        description: article.description,
+        url: article.url,
+        image: article.urlToImage,
+        source: article.source.name,
+        publishedAt: new Date(article.publishedAt).toLocaleString()
+      }))
+      .slice(0, 8);
+    
+    res.json(articles);
+  } catch (error) {
+    console.error('Error fetching education news:', error);
+    res.status(500).send('Error fetching education news');
   }
 });
 
