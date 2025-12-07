@@ -131,17 +131,25 @@ app.get('/education', async (req, res) => {
     
     const response = await axios.get('https://newsapi.org/v2/everything', {
       params: {
-        q: 'Scotland education',
+        q: 'education Scotland',
         language: 'en',
         from: fromDate,
         sortBy: 'publishedAt',
-        pageSize: 20,
+        pageSize: 30,
         apiKey: '59278959b90f45bbbfee3a42287dbf7b'
       }
     });
     
+    // Very light filtering - just remove obvious sports
     const articles = response.data.articles
-      .filter(article => article.title && article.description)
+      .filter(article => {
+        if (!article.title || !article.description) return false;
+        const combined = (article.title + ' ' + article.description).toLowerCase();
+        // Remove only obvious sports content
+        return !combined.includes('premier league') && 
+               !combined.includes('champions league') &&
+               !combined.includes('rugby match');
+      })
       .map(article => ({
         title: article.title,
         description: article.description,
@@ -152,6 +160,7 @@ app.get('/education', async (req, res) => {
       }))
       .slice(0, 8);
     
+    console.log(`Education: Returning ${articles.length} articles`);
     res.json(articles);
   } catch (error) {
     console.error('Error fetching education news:', error);
