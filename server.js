@@ -46,8 +46,12 @@ app.get('/news', async (req, res) => {
     // Return articles (should be 8)
     res.json(articles);
   } catch (error) {
-    console.error('Error fetching news:', error);
-    res.status(500).send('Error fetching news');
+    console.error('Error fetching news:', error.message);
+    res.status(500).json({ 
+      error: 'Error fetching news',
+      message: error.message,
+      articles: []
+    });
   }
 });
 
@@ -81,8 +85,12 @@ app.get('/tech', async (req, res) => {
     
     res.json(articles);
   } catch (error) {
-    console.error('Error fetching tech news:', error);
-    res.status(500).send('Error fetching tech news');
+    console.error('Error fetching tech news:', error.message);
+    res.status(500).json({
+      error: 'Error fetching tech news',
+      message: error.message,
+      articles: []
+    });
   }
 });
 
@@ -116,8 +124,12 @@ app.get('/sports', async (req, res) => {
     
     res.json(articles);
   } catch (error) {
-    console.error('Error fetching sports news:', error);
-    res.status(500).send('Error fetching sports news');
+    console.error('Error fetching sports news:', error.message);
+    res.status(500).json({
+      error: 'Error fetching sports news', 
+      message: error.message,
+      articles: []
+    });
   }
 });
 
