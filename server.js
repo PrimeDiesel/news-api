@@ -129,47 +129,46 @@ app.get('/education', async (req, res) => {
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
     const fromDate = ninetyDaysAgo.toISOString().split('T')[0];
     
+    console.log('Education: Fetching from', fromDate);
+    
     const response = await axios.get('https://newsapi.org/v2/everything', {
       params: {
-        q: '(Scotland OR Scottish OR SQA) AND (education OR school OR university OR pupils OR teachers OR exam OR "Higher" OR "National 5" OR curriculum OR college)',
+        q: 'Scotland education school',
         language: 'en',
         from: fromDate,
         sortBy: 'publishedAt',
-        pageSize: 100,
+        pageSize: 50,
         apiKey: '59278959b90f45bbbfee3a42287dbf7b'
       }
     });
     
+    console.log('Education: Got', response.data.articles.length, 'articles');
+    
     // Filter OUT sports and non-education content
     const excludedWords = [
-      'football', 'rugby', 'cricket', 'tennis', 'f1', 'formula 1',
-      'premier league', 'champions league', 'world cup', 'olympics',
-      'match', 'goal', 'score', 'tournament', 'championship', 'game', 'win', 'defeat',
-      'movie', 'film', 'celebrity', 'entertainment', 'music album', 'concert'
-    ];
-    
-    // Keywords that MUST appear for education content
-    const requiredWords = [
-      'education', 'school', 'university', 'college', 'pupils', 
-      'students', 'teachers', 'exam', 'curriculum', 'sqa', 
-      'higher', 'national 5', 'learning', 'teaching', 'qualification'
+      'football', 'rugby', 'cricket', 'premier league', 'champions league'
     ];
     
     const articles = response.data.articles
       .filter(article => {
         if (!article.title || !article.description) return false;
         
-        const lowerTitle = article.title.toLowerCase();
-        const lowerDesc = article.description.toLowerCase();
-        const combined = lowerTitle + ' ' + lowerDesc;
+        const combined = (article.title + ' ' + article.description).toLowerCase();
         
-        // Must NOT contain sports/entertainment words
+        // Must NOT contain sports
         const hasBadWords = excludedWords.some(word => combined.includes(word));
         if (hasBadWords) return false;
         
-        // Must contain at least ONE education keyword
-        const hasEducationWord = requiredWords.some(word => combined.includes(word));
-        return hasEducationWord;
+        // Must contain education keywords
+        const hasEducation = combined.includes('education') || 
+                            combined.includes('school') || 
+                            combined.includes('university') ||
+                            combined.includes('pupils') ||
+                            combined.includes('students') ||
+                            combined.includes('teachers') ||
+                            combined.includes('sqa');
+        
+        return hasEducation;
       })
       .map(article => ({
         title: article.title,
@@ -181,10 +180,16 @@ app.get('/education', async (req, res) => {
       }))
       .slice(0, 8);
     
+    console.log('Education: Returning', articles.length, 'filtered articles');
     res.json(articles);
   } catch (error) {
-    console.error('Error fetching education news:', error);
-    res.status(500).send('Error fetching education news');
+    console.error('Error fetching education news:', error.message);
+    console.error('Full error:', error.response ? error.response.data : error);
+    res.status(500).json({ 
+      error: 'Error fetching education news',
+      message: error.message,
+      details: error.response ? error.response.data : null
+    });
   }
 });
 
