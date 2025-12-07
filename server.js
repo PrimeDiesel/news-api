@@ -38,21 +38,12 @@ app.get('/news', async (req, res) => {
         description: article.description,
         url: article.url,
         image: article.urlToImage,
+        source: 'BBC News',
         publishedAt: new Date(article.publishedAt).toLocaleString()
       }))
-      .slice(0, 6);
+      .slice(0, 8);
     
-    // Ensure there are exactly 6 articles
-    while (articles.length < 6) {
-      articles.push({
-        title: 'No title available',
-        description: 'No description available',
-        url: '',
-        image: '',
-        publishedAt: ''
-      });
-    }
-    
+    // Return articles (should be 8)
     res.json(articles);
   } catch (error) {
     console.error('Error fetching news:', error);
@@ -133,10 +124,10 @@ app.get('/sports', async (req, res) => {
 // Education news route - Scotland/SQA focused (NEW!)
 app.get('/education', async (req, res) => {
   try {
-    // Go back 30 days to find more education articles
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const fromDate = thirtyDaysAgo.toISOString().split('T')[0];
+    // Go back 90 days (3 months) to find more education articles
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const fromDate = ninetyDaysAgo.toISOString().split('T')[0];
     
     const response = await axios.get('https://newsapi.org/v2/everything', {
       params: {
@@ -144,7 +135,7 @@ app.get('/education', async (req, res) => {
         language: 'en',
         from: fromDate,
         sortBy: 'publishedAt',
-        pageSize: 50,
+        pageSize: 100,
         apiKey: '59278959b90f45bbbfee3a42287dbf7b'
       }
     });
